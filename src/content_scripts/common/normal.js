@@ -358,22 +358,24 @@ function createNormal(insert) {
 
     // when scrolling, Chrome re-checks which element is under the mouse after every step,
     // which is slow on big pages; covering the page makes that check instant
-    var scrollPane;
+    var scrollPane, scrollPaneHost;
     function coverPage(covered) {
-        if (!covered) {
-            scrollPane && scrollPane.remove();
-            return;
-        }
-        if (getBrowserName() !== "Chrome") {
-            return;
-        }
         if (!scrollPane) {
+            if (!covered || getBrowserName() !== "Chrome") {
+                return;
+            }
             scrollPane = document.createElement("div");
-            scrollPane.fromSurfingKeys = true;
-            scrollPane.className = "surfingkeys_scroll_pane";
-            scrollPane.addEventListener("pointerdown", () => scrollPane.remove());
+            scrollPane.style.cssText = "position: fixed; inset: 0; z-index: 2147483647;";
+            scrollPane.addEventListener("pointerdown", () => coverPage(false));
+            // shadow root keeps pane changes invisible to page css
+            scrollPaneHost = document.createElement("div");
+            scrollPaneHost.fromSurfingKeys = true;
+            scrollPaneHost.attachShadow({ mode: 'open' }).appendChild(scrollPane);
         }
-        document.documentElement.appendChild(scrollPane);
+        scrollPane.style.display = covered ? "block" : "none";
+        if (!scrollPaneHost.isConnected) {
+            document.documentElement.appendChild(scrollPaneHost);
+        }
     }
 
     var smoothScrolling;
