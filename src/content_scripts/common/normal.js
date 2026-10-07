@@ -361,21 +361,23 @@ function createNormal(insert) {
     var scrollPane, scrollPaneHost;
     function coverPage(covered) {
         if (!scrollPane) {
-            if (!covered || getBrowserName() !== "Chrome") {
-                return;
-            }
-            scrollPane = document.createElement("div");
-            scrollPane.style.cssText = "position: fixed; inset: 0; z-index: 2147483647;";
-            scrollPane.addEventListener("pointerdown", () => coverPage(false));
-            // shadow root keeps pane changes invisible to page css
-            scrollPaneHost = document.createElement("div");
-            scrollPaneHost.fromSurfingKeys = true;
-            scrollPaneHost.attachShadow({ mode: 'open' }).appendChild(scrollPane);
+            return;
         }
         scrollPane.style.display = covered ? "block" : "none";
-        if (!scrollPaneHost.isConnected) {
+        if (covered && !scrollPaneHost.isConnected) {
             document.documentElement.appendChild(scrollPaneHost);
         }
+    }
+    // pane in a shadow root, inserted while the page is still empty
+    if (getBrowserName() === "Chrome") {
+        scrollPane = document.createElement("div");
+        scrollPane.style.cssText = "position: fixed; inset: 0; z-index: 2147483647; display: none;";
+        scrollPane.addEventListener("pointerdown", () => coverPage(false));
+        scrollPaneHost = document.createElement("div");
+        scrollPaneHost.fromSurfingKeys = true;
+        scrollPaneHost.style.cssText = "display: contents !important;";
+        scrollPaneHost.attachShadow({ mode: 'open' }).appendChild(scrollPane);
+        document.documentElement && document.documentElement.appendChild(scrollPaneHost);
     }
 
     var smoothScrolling;
